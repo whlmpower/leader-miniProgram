@@ -27,8 +27,9 @@ export const config = {
   // 业务规则
   maxInputChars: Number(process.env.MAX_INPUT_CHARS || 1000),
   postReportTurns: Number(process.env.POST_REPORT_TURNS || 10),
-  reportTtlHours: Number(process.env.REPORT_TTL_HOURS || 24),
-  abandonTtlDays: Number(process.env.ABANDON_TTL_DAYS || 3),
+  // 用户数据保留时限：已生成报告的会话保留 7 天（168h），未生成报告的草稿同样保留 7 天；均可经环境变量覆盖
+  reportTtlHours: Number(process.env.REPORT_TTL_HOURS || 168),
+  abandonTtlDays: Number(process.env.ABANDON_TTL_DAYS || 7),
 
   // 鉴权（v2）
   jwtSecret: process.env.JWT_SECRET || 'dev_insecure_secret_change_me',
