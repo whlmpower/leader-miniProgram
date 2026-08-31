@@ -1,0 +1,113 @@
+# 全向领导力专属顾问 — 诊断映射规则
+# 按「能力域 + 方向标签」组织（跨方向问题可同时命中多套理论）
+# required_anchors：必填锚点，不齐则强制追问，绝不输出结论
+# confidence：匹配置信度；低置信须在报告中标注并列出备选
+
+rules:
+  # ===== 向下 · 任务推进与授权 =====
+  - id: down_situational
+    direction: down
+    domain: 任务推进与授权
+    primary_theory: "情境领导力"
+    alternate_theories: ["管理方格"]
+    required_anchors: [down_competence, down_commitment]
+    match:
+      - when: "competence in [A,B] and commitment in [A,B]"
+        style: "S1 指令型"
+        confidence: high
+      - when: "competence in [A,B] and commitment in [C,D]"
+        style: "S2 教练型"
+        confidence: high
+      - when: "competence in [C,D] and commitment in [A,B]"
+        style: "S3 支持型"
+        confidence: high
+      - when: "competence in [C,D] and commitment in [C,D]"
+        style: "S4 授权型"
+        confidence: high
+    rationale: "按下属成熟度匹配领导风格；高能力低意愿最易误判为指令型，实为支持型"
+
+  - id: down_grid
+    direction: down
+    domain: 团队风格诊断
+    primary_theory: "管理方格"
+    alternate_theories: ["情境领导力"]
+    required_anchors: [down_task, down_relation]
+    match:
+      - when: "task in [A,B] and relation in [A,B,C,D]"
+        style: "偏任务型(9,1)隐患"
+        confidence: medium
+      - when: "task in [A] and relation in [C,D]"
+        style: "乡村俱乐部型(1,9)"
+        confidence: medium
+      - when: "task in [C] and relation in [C]"
+        style: "中庸型(5,5)"
+        confidence: medium
+      - when: "task in [D] and relation in [D]"
+        style: "团队型(9,9)目标"
+        confidence: medium
+    rationale: "管理者风格偏任务或偏关系，需先自我诊断再纠偏"
+
+  - id: down_grow
+    direction: down
+    domain: 对话与辅导
+    primary_theory: "GROW 教练模型"
+    alternate_theories: []
+    required_anchors: [grow_reality, grow_goal]
+    match:
+      - when: "reality in [A,B]"
+        style: "先引导 G、R，不急着给行动"
+        confidence: medium
+      - when: "goal in [C,D] and reality in [C,D]"
+        style: "直接进 O、W，共同制定行动计划"
+        confidence: medium
+    rationale: "下属说不清目标/现状时，先帮其理清，而非直接下指令"
+
+  # ===== 向上 · 影响 =====
+  - id: up_managing
+    direction: up
+    domain: 向上汇报与影响
+    primary_theory: "向上管理 + 金字塔原理"
+    alternate_theories: []
+    required_anchors: [up_expectation, up_proactivity]
+    match:
+      - when: "expectation in [A,B]"
+        style: "先澄清预期：主动对齐目标与标准"
+        confidence: medium
+      - when: "proactivity in [A]"
+        style: "建立主动同步机制，提前暴露风险"
+        confidence: medium
+      - when: "proactivity in [D]"
+        style: "带方案请示，结论先行"
+        confidence: medium
+    rationale: "向上管理的核心是经营信息流与预期，而非被动等待"
+    framework_note: "以上为实践框架，效果因人而异，不可替代专业判断"
+    # 领导侧诊断守卫：二次信号（已主动/带方案仍被拒）命中时激活，信号由 SKILL.md 步骤4 检测
+    leadership_side_guard:
+      trigger_signal: "up_proactivity in [C,D] 且用户自述已主动/带方案仍被拒（由 SKILL.md 步骤4 检测，非锚点变量）"
+      action: "置信度降为 low；不按 proactivity=D 重复开'带方案请示'药方；惰性追问 up_leader_control / up_deviation_tolerance（二选一，不进 required_anchors）；据其值定位根因"
+      root_cause_map:
+        - when: "up_leader_control in [C,D]"
+          root_cause: "控制型领导，路径锁死（保护机制≠对个人的否定）"
+        - when: "up_deviation_tolerance in [D]"
+          root_cause: "零容忍偏差，自主提议被视作挑战（价值观/风格错位）"
+      boundary: "自动套用第七节第5条效用/心理边界声明：技巧仅争取局部空间，建议工作外保留自主出口，标注'通用经验/非理论'"
+
+  # ===== 横向 · 推动 =====
+  - id: lateral_push
+    direction: lateral
+    domain: 跨部门协调与推动
+    primary_theory: "利益相关者管理 + 影响力"
+    alternate_theories: []
+    required_anchors: [lateral_trust, lateral_interest]
+    match:
+      - when: "trust in [A,B]"
+        style: "先建信任/小协作，再谈事"
+        confidence: medium
+      - when: "interest in [A,B]"
+        style: "先摸清对方核心 KPI 与诉求"
+        confidence: medium
+      - when: "trust in [C,D] and interest in [C,D]"
+        style: "直接找共赢点推动"
+        confidence: medium
+    rationale: "跨部门推动靠共赢与信任，而非职权"
+    framework_note: "影响力技巧是概率性杠杆，不可用于操纵他人"

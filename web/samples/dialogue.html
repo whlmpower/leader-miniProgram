@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta name="theme-color" content="#14202E"/>
+<title>诊断样例 · 向上汇报 · 强势指令型上级 | 全向领导力顾问</title>
+<link rel="stylesheet" href="../assets/css/tokens.css"/>
+<style>
+  .wrap { max-width: 640px; margin: 0 auto; padding: 0 20px 80px; }
+  .topbar { height: 4px; background: var(--accent); }
+  .nav { display: flex; align-items: center; gap: 12px; padding: 16px 0; }
+  .nav a { color: var(--ink-2); text-decoration: none; font-size: 13px; }
+  .nav a:hover { color: var(--accent); }
+  .nav .sp { flex: 1; }
+
+  .s-head { padding: 18px 0 22px; border-bottom: 1px solid var(--line); margin-bottom: 26px; }
+  .s-tag {
+    display: inline-block; font-size: 11px; letter-spacing: 1px; color: var(--accent);
+    border: 1px solid var(--accent-line); border-radius: 4px; padding: 2px 8px; margin-bottom: 14px;
+  }
+  .s-title {
+    font-family: var(--serif); font-size: 26px; font-weight: 700; line-height: 1.45;
+    color: var(--ink); margin-bottom: 14px; letter-spacing: 0.5px;
+  }
+  .s-meta { font-size: 12.5px; color: var(--ink-3); line-height: 1.9; }
+  .s-meta span { margin-right: 16px; }
+
+  .blk { margin-bottom: 34px; }
+  .blk-h {
+    display: flex; align-items: baseline; gap: 12px;
+    padding-bottom: 9px; margin-bottom: 16px; border-bottom: 1px solid var(--line);
+  }
+  .blk-no { font-family: var(--mono); font-size: 11.5px; color: var(--accent); letter-spacing: 1px; }
+  .blk-t { font-family: var(--serif); font-size: 17px; font-weight: 700; letter-spacing: 1px; color: var(--ink); }
+
+  .quote {
+    background: var(--bg-2); border: 1px solid var(--line); border-left: 2px solid var(--accent);
+    border-radius: 6px; padding: 16px 18px; font-size: 14px; line-height: 1.9; color: var(--ink-2);
+  }
+  .quote b { color: var(--ink); }
+
+  .q { margin-bottom: 20px; }
+  .q-t { font-size: 13.5px; color: var(--ink); margin-bottom: 10px; line-height: 1.7; }
+  .q-t em { font-style: normal; color: var(--ink-3); font-size: 12px; margin-right: 6px; }
+  .opt {
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 9px 12px; border-radius: 6px; border: 1px solid var(--line);
+    font-size: 13px; color: var(--ink-3); line-height: 1.65; margin-bottom: 6px;
+  }
+  .opt.pick { border-color: var(--accent-line); background: var(--accent-tint); color: var(--ink); }
+  .opt-k {
+    flex: 0 0 18px; height: 18px; border-radius: 3px; margin-top: 2px;
+    background: var(--accent-tint); color: var(--accent); font-family: var(--mono); font-size: 11px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .opt.pick .opt-k { background: var(--accent); color: var(--accent-ink); }
+  .opt-note { font-size: 12px; color: var(--accent); margin-top: 8px; }
+
+  .rp { font-size: 14.5px; line-height: 1.95; color: var(--ink); }
+  .rp h2 {
+    font-family: var(--serif); font-size: 17.5px; font-weight: 700; color: var(--accent);
+    margin: 30px 0 12px; letter-spacing: 0.5px;
+  }
+  .rp h2:first-child { margin-top: 0; }
+  .rp h3 { font-size: 14.5px; font-weight: 600; margin: 20px 0 8px; color: var(--ink); }
+  .rp p { margin: 10px 0; }
+  .rp ul, .rp ol { margin: 10px 0; padding-left: 22px; }
+  .rp li { margin: 6px 0; }
+  .rp strong { font-weight: 600; color: var(--ink); }
+  .rp .say {
+    display: block; margin: 10px 0; padding: 12px 15px;
+    background: var(--bg-2); border-left: 2px solid var(--accent); border-radius: 0 6px 6px 0;
+    color: var(--ink-2); font-size: 13.5px; line-height: 1.85;
+  }
+  .rp table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; }
+  .rp th, .rp td { border: 1px solid var(--line); padding: 9px 11px; text-align: left; vertical-align: top; }
+  .rp th { background: var(--bg-2); color: var(--accent); font-weight: 600; }
+  .rp blockquote {
+    margin: 22px 0; padding: 14px 16px; background: var(--bg-2);
+    border-left: 2px solid var(--line-2); border-radius: 0 6px 6px 0;
+    color: var(--ink-3); font-size: 13px; line-height: 1.85;
+  }
+  .rp blockquote p { margin: 4px 0; }
+
+  .foot {
+    margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--line);
+    font-size: 12px; color: var(--ink-3); line-height: 1.9;
+  }
+  .cta { margin-top: 26px; text-align: center; }
+  .cta a {
+    display: inline-block; background: var(--accent); color: var(--accent-ink);
+    text-decoration: none; font-size: 14px; padding: 12px 26px; border-radius: 6px; letter-spacing: 1px;
+  }
+</style>
+</head>
+<body>
+<div class="topbar"></div>
+<div class="app">
+<div class="wrap">
+
+  <nav class="nav">
+    <a href="../index.html">← 返回首页</a>
+    <span class="sp"></span>
+    <a href="../index.html">开始我的诊断</a>
+  </nav>
+
+  <header class="s-head">
+    <span class="s-tag">诊断样例 · 向上汇报</span>
+    <h1 class="s-title">「我一提想法，他就笑着给我否掉」</h1>
+    <div class="s-meta">
+      <span>方向：向上</span>
+      <span>深度：标准诊断</span>
+      <span>轮次：4 轮问卷 + 报告</span>
+    </div>
+  </header>
+
+  <!-- 用户原述 -->
+  <section class="blk">
+    <div class="blk-h"><span class="blk-no">01</span><h2 class="blk-t">用户原述</h2></div>
+    <div class="quote">
+      直属领导是<b>比较强势的管理者</b>，会把团队任务拆得很细，期望成员按他的想法执行。<br/>
+      当我表达个人想法时，会<b>明显感受到他的排斥与否定</b>——语气面带笑容，态度强硬。<br/>
+      我的成长环境里，经历的主管都<b>给予团队成员极大自主性</b>，而非"无想法地简单执行"。<br/>
+      我<b>不认可</b>当前领导的管理方法，认为其极大压制了个人创造力。
+    </div>
+    <p class="s-meta" style="margin-top:14px">
+      归类：典型的<b>「向上影响 / 价值观冲突」</b>型困境，而不是单纯的"不会沟通"。
+    </p>
+  </section>
+
+  <!-- 问卷与作答 -->
+  <section class="blk">
+    <div class="blk-h"><span class="blk-no">02</span><h2 class="blk-t">对号入座（不打分的 4 级描述）</h2></div>
+
+    <div class="q">
+      <p class="q-t"><em>Q1</em>你们共事多久了？</p>
+      <div class="opt"><span class="opt-k">A</span><span>不到 1 年（刚加入不久，还在互相磨合）</span></div>
+      <div class="opt pick"><span class="opt-k">B</span><span>1-3 年（已经比较熟悉彼此的脾气和节奏）</span></div>
+      <div class="opt"><span class="opt-k">C</span><span>3-5 年（长期共事，他的风格你早就清楚）</span></div>
+      <div class="opt"><span class="opt-k">D</span><span>5 年以上（多年老搭档，关系已经定型）</span></div>
+    </div>
+
+    <div class="q">
+      <p class="q-t"><em>Q2</em>最想改善的是哪一块？（决定建议的重心）</p>
+      <div class="opt pick"><span class="opt-k">A</span><span>向上汇报（让他听进去我的想法）</span></div>
+      <div class="opt"><span class="opt-k">B</span><span>个人角色成长（在压制环境下为自己找到发挥创造力的空间）</span></div>
+      <div class="opt"><span class="opt-k">C</span><span>团队管理（我自己也带人，想学怎么分权）</span></div>
+    </div>
+
+    <div class="q">
+      <p class="q-t"><em>Q3</em>他给你布置任务时，你对"要做什么、做到什么标准"清楚吗？</p>
+      <div class="opt"><span class="opt-k">A</span><span>完全不清晰（经常不知道他到底想要什么）</span></div>
+      <div class="opt"><span class="opt-k">B</span><span>大致知道（方向清楚，标准模糊，做完常被挑刺）</span></div>
+      <div class="opt pick"><span class="opt-k">C</span><span>明确 KPI / 交付标准（他拆得很细，要什么、做到什么程度都很具体）</span></div>
+      <div class="opt"><span class="opt-k">D</span><span>懂战略意图（连为什么做、长远目标都清楚）</span></div>
+    </div>
+
+    <div class="q">
+      <p class="q-t"><em>Q4</em>你平时是怎么跟他同步工作的？</p>
+      <div class="opt"><span class="opt-k">A</span><span>只在被催才报（出了事才说）</span></div>
+      <div class="opt pick"><span class="opt-k">B</span><span>定期报进度（按节奏同步，但不主动暴露风险和想法）</span></div>
+      <div class="opt pick"><span class="opt-k">C</span><span>主动报风险（会提前同步卡点、风险，也会提自己的看法）</span></div>
+      <div class="opt pick"><span class="opt-k">D</span><span>带方案请示（提问题时同时给几个选项和推荐，结论先行）</span></div>
+      <p class="opt-note">用户作答：B / C / D 都在做 → 取最高等级 D，报告中注明覆盖范围 B~D。</p>
+    </div>
+  </section>
+
+  <!-- 诊断报告 -->
+  <section class="blk">
+    <div class="blk-h"><span class="blk-no">03</span><h2 class="blk-t">结构化诊断报告</h2></div>
+
+    <div class="rp">
+      <h2>【问题定位】</h2>
+      <p>
+        与强势指令型直属领导之间，表达个人想法即被排斥否定 → <strong>向上影响失效</strong>。
+        根因不在"不主动"，而在"已主动 + 想法偏离既定框架 → 触发控制保护机制"。
+        方向：向上。理论标签：向上管理 + 金字塔原理。
+      </p>
+
+      <h2>【理论依据】</h2>
+      <ul>
+        <li><strong>匹配理论</strong>：向上管理（Managing Up）+ 金字塔原理——属<strong>实践框架</strong>，非因果科学，效果因人而异。</li>
+        <li><strong>为什么是它</strong>：锚点组合为「预期清晰度 = 明确 KPI」+「汇报主动性 = 带方案请示」。按标准规则，这个组合本应给出"带方案请示、结论先行"——<strong>但你已经这么做了，仍然被拒</strong>。标准规则不足以解释，真正的卡点在第三个变量：他对"偏离"的容忍度极低。</li>
+        <li><strong>置信度</strong>：中。理论本身成熟，但"高主动仍受阻"属情景化扩展，非规则直接命中。</li>
+      </ul>
+
+      <h2>【根因分析】</h2>
+      <ol>
+        <li><strong>预期极清晰（C），但路径被锁死</strong>：他把任务拆到了"怎么做"这一层，而你的创造性恰恰出现在"怎么做"上——正好撞进他的控制区。</li>
+        <li><strong>"面带笑容但态度强硬" = 控制保护，不是对你个人的否定</strong>：强势管理者会把"不同的想法"潜意识读成"挑战权威 / 可能失控"，所以用微笑的方式拒绝。这是他的安全感问题，不是你的价值问题。</li>
+        <li><strong>价值观错位</strong>：你成长于"给予自主"的管理环境，把"有想法空间"视为常态；他信奉"拆解 + 执行"。这是管理哲学层面的冲突——技巧能缓解，解决不了。</li>
+      </ol>
+
+      <h2>【行动清单】</h2>
+
+      <h3>立即做（今 / 明日）—— 把"想法"重新包装进他的框架</h3>
+      <p>任何想提的改进，先认他的目标，再附数据，只申请"小试验"而非"大辩论"。</p>
+      <span class="say">
+        💬 话术 A：「关于 X（他的目标），我按您的思路先把 A 落地了；另外我试了个小变种 B，在〔某指标〕上比 A 快 20%。下一块能不能先用 B 跑一下，拿数据给您看？」
+      </span>
+      <span class="say">
+        💬 话术 B（被拒时）：「明白，那我按原方案走。B 我先记着，下次有合适场景再提。」——不纠结、不个人化。
+      </span>
+
+      <h3>本周做 —— 建"信用账户"</h3>
+      <p>
+        把他拆细的活，<strong>超额、零返工</strong>地交完 2-3 个，再用"我能不能自己定实现方式、出份对比给您"去换一小块自主权。
+        信用够了，控制才会松动。
+      </p>
+
+      <h3>跟进指标</h3>
+      <ul>
+        <li>他主动问"你怎么看"的频率；</li>
+        <li>你"自选实现方式"的任务占比，是否从 0 往上走；</li>
+        <li>每周自评：被否定后的情绪消耗是否下降。</li>
+      </ul>
+
+      <h3>⚠️ 避坑</h3>
+      <ul>
+        <li>别在<strong>公开场合</strong>抛不同想法——当众挑战控制，必被拒。要私下、小范围、带数据。</li>
+        <li>别说"我觉得有更好的方法"——会触发"你在教我做事"。要说"为达成您的目标，我试了…，数据表明…"。</li>
+        <li>别因被拒就消极执行——那会反过来证实他"给你自主 = 不可控"的担忧，他会收得更紧。</li>
+        <li>别把"他否定了想法"等同于"他否定了你这个人"。</li>
+      </ul>
+
+      <h2>【预期效果】</h2>
+      <ul>
+        <li>具体、有数据、且在框架内的想法，被<strong>部分</strong>采纳——从 0 突破到偶尔，就已经是进展。</li>
+        <li>不再把每一次否定都当成对自己的打击，消耗感明显下降。</li>
+        <li>逐步挣到<strong>局部</strong>自主权：先一小块，再扩大。</li>
+      </ul>
+
+      <h2>【置信度拆解】</h2>
+      <table>
+        <thead><tr><th>来源</th><th>内容</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>规则命中</td><td>向上管理 + 金字塔原理；锚点 C / D 组合</td><td>来自理论库，可信度较高</td></tr>
+          <tr><td>模型扩展</td><td>"框架内微提案" + "信用账户" + 目标与方法解耦</td><td>针对本次情境的即时推断，低置信，供参考</td></tr>
+        </tbody>
+      </table>
+
+      <h2>【诊断依据】</h2>
+      <p>
+        用户输入（强势指令型 / 表达即被拒 / 来自自主型管理背景 / 不认可其方法）
+        → 锚点 up_expectation = C、up_proactivity = D、up_leader_control = D
+        → 理论 managing-up + 金字塔原理
+        → 置信度：中
+        → 出处：理论库规则 + 情景化扩展。
+      </p>
+
+      <h2>【理论延伸】</h2>
+      <ul>
+        <li>读：《Managing Up》（Rosanne Badowski）。练：列出上级最在意的 3 个核心关注点，对齐之后再开口。</li>
+        <li>反思题：这一周，我对他的"否定"有没有过度个人化的解读？</li>
+        <li><strong>关于创造力保护</strong>（通用经验，非理论）：向上管理换不来一个"自主型的上级"。真正护住创造力的是两件事——①在"达成他的目标"前提下，把创新塞进 HOW 层的小试验；②在工作之外保留一个完全自主的创造出口。别把全部的自我实现都押在"让他改变"上。</li>
+      </ul>
+
+      <blockquote>
+        <p>本建议基于经典管理学理论，仅供参考，不构成管理决策唯一依据，请结合实际情况调整。</p>
+      </blockquote>
+    </div>
+  </section>
+
+  <div class="cta">
+    <a href="../index.html">开始我的诊断</a>
+  </div>
+
+  <footer class="foot">
+    本样例为一次真实诊断链路的脱敏存档，已隐去姓名、单位与可识别信息，仅用于说明诊断会产出什么。<br/>
+    相似处境不等于相同结论——你的诊断会基于你自己的描述重新推导。
+  </footer>
+
+</div>
+</div>
+</body>
+</html>

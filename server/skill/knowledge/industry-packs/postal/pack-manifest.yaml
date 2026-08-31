@@ -1,0 +1,22 @@
+# 邮政行业包清单（pack-manifest）
+name: postal
+description: 中国邮政专属行业包（代理金融 + 寄递 + 国企语境）
+active_pack: true
+
+# 四改四不改契约
+changes_allowed:
+  - 话术变体（替换通用模板血肉）
+  - 场景标签
+  - 行业专属语境提示（国企/合规/层级/党建）
+  - 高频事件示范
+
+changes_forbidden:
+  - 理论模型本身
+  - 诊断匹配逻辑（diagnosis-rules.yaml）
+  - 锚点级数与理论映射
+  - 输出模板结构
+
+references:
+  - postal-context.md
+  - agency-finance.md
+  - delivery.md

@@ -1,0 +1,108 @@
+/* ===== 设计语言 token：石墨深蓝 / 青绿强调 / 权威咨询风 ===== */
+:root {
+  /* 表面层级：深墨蓝 */
+  --bg: #14202e;
+  --bg-2: #1c2c3e;
+  --bg-3: #22354a;
+  --bg-elev: #263d54;
+
+  /* 文字层级 */
+  --ink: #e8eef4;
+  --ink-2: #c4d2df;
+  --ink-3: #8ba0b5;
+
+  /* 唯一强调色：青绿 */
+  --accent: #35b89a;
+  --accent-2: #2fa588;
+  --accent-ink: #0b1a16;
+  --accent-tint: rgba(53, 184, 154, 0.12);
+  --accent-line: rgba(53, 184, 154, 0.4);
+
+  /* 语义色 */
+  --danger: #e5484d;
+  --warn: #f5a524;
+  --danger-tint: rgba(229, 72, 77, 0.14);
+
+  /* 分隔线 */
+  --line: rgba(232, 238, 244, 0.12);
+  --line-2: rgba(232, 238, 244, 0.24);
+
+  /* 字体：UI 无衬线，标题与报告正文衬线（咨询报告感） */
+  --sans: "Noto Sans SC", -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB",
+    "Microsoft YaHei", sans-serif;
+  --serif: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", serif;
+  --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+
+  /* 圆角：小圆角，保留专业感 */
+  --r-sm: 4px;
+  --r: 6px;
+  --r-lg: 10px;
+
+  --shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  font-family: var(--sans);
+  font-weight: 400;
+  color: var(--ink);
+  background: var(--bg);
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* 质感签名：极淡的水平网格线，隐喻分析网格与坐标纸 */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.35;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgba(232, 238, 244, 0.022) 0px,
+    rgba(232, 238, 244, 0.022) 1px,
+    transparent 1px,
+    transparent 4px
+  );
+}
+
+.app {
+  max-width: 540px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: var(--bg);
+  position: relative;
+  overflow-x: hidden;
+}
+
+@media (min-width: 600px) {
+  body {
+    padding: 24px 0;
+    background: #0d1620;
+  }
+  .app {
+    min-height: calc(100vh - 48px);
+    border-radius: var(--r);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--line);
+  }
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--accent-ink);
+}

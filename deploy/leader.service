@@ -1,0 +1,30 @@
+# 全向领导力顾问 H5 · systemd 服务单元（替代 PM2 的纯 systemd 方案）
+# 用法：
+#   cp deploy/leader.service /etc/systemd/system/leader.service
+#   systemctl daemon-reload
+#   systemctl enable --now leader
+#
+# 注意：把下面的 /opt/leader/server、用户、端口改成你的实际值
+
+[Unit]
+Description=全向领导力顾问 H5 后端 (Node/Express)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/leader/server
+ExecStart=/usr/bin/node /opt/leader/server/src/index.js
+Environment=PORT=3002
+# 如需接入真实大模型，把变量加到下面（或写在 server/.env 里由进程读取）：
+# Environment=LLM_API_KEY=sk-xxxx
+# Environment=LLM_BASE_URL=https://api.deepseek.com/v1
+# Environment=LLM_MODEL=deepseek-chat
+
+# 不直连公网：监听回环已由 Express 默认 0.0.0.0，但 Nginx 只反代 127.0.0.1，安全足够
+Restart=on-failure
+RestartSec=3
+User=root
+# 若用非 root 用户，请确保其对 /opt/leader/server 有读权限、对 server/data 有写权限
+
+[Install]
+WantedBy=multi-user.target
