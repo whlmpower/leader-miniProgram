@@ -65,6 +65,7 @@ const state = {
   maxInputChars: 1000,
   busy: false,
   captchaId: '',
+  editingId: null,
 };
 
 // ---------- 通用 UI ----------
@@ -84,6 +85,7 @@ function showView(name) {
   window.scrollTo(0, 0);
   if (name === 'login') refreshCaptcha();
   if (name === 'admin') loadUsers();
+  if (name === 'conversations') loadConversations();
 }
 
 function setBusy(busy, placeholder) {
@@ -114,6 +116,14 @@ $$('[data-go]').forEach((btn) => {
       enterAfterLogin();
       return;
     }
+    if (target === 'conversations') {
+      if (!getToken()) {
+        showView('login');
+        return;
+      }
+      showView('conversations');
+      return;
+    }
     showView(target);
   });
 });
@@ -128,6 +138,40 @@ function closePrivacy() {
 $('#openPrivacy').addEventListener('click', openPrivacy);
 $('#openPrivacy2').addEventListener('click', openPrivacy);
 $$('[data-close-modal]').forEach((el) => el.addEventListener('click', closePrivacy));
+
+// ---------- 通用确认弹层（替代原生 confirm） ----------
+function confirmDialog({ title = '提示', message = '', confirmText = '确定', danger = false } = {}) {
+  return new Promise((resolve) => {
+    const modal = $('#confirmModal');
+    const msgEl = $('#confirmMsg');
+    const okBtn = $('#confirmOk');
+    const cancelBtn = $('#confirmCancel');
+    if (!modal || !msgEl || !okBtn || !cancelBtn) {
+      resolve(window.confirm(message || title));
+      return;
+    }
+    msgEl.innerHTML =
+      `<div class="confirm-title">${escapeHtml(title)}</div>` +
+      `<div class="confirm-text">${escapeHtml(message)}</div>`;
+    okBtn.textContent = confirmText;
+    okBtn.classList.toggle('btn-danger', !!danger);
+    okBtn.classList.toggle('btn-primary', !danger);
+    const mask = modal.querySelector('[data-confirm-close]');
+    const close = (val) => {
+      modal.hidden = true;
+      okBtn.removeEventListener('click', onOk);
+      cancelBtn.removeEventListener('click', onCancel);
+      mask.removeEventListener('click', onCancel);
+      resolve(val);
+    };
+    const onOk = () => close(true);
+    const onCancel = () => close(false);
+    okBtn.addEventListener('click', onOk);
+    cancelBtn.addEventListener('click', onCancel);
+    mask.addEventListener('click', onCancel);
+    modal.hidden = false;
+  });
+}
 
 // ============================================================
 // 登录
@@ -192,7 +236,7 @@ async function login() {
 
 function enterAfterLogin() {
   if (state.role === 'admin') showView('admin');
-  else startChat();
+  else showView('conversations');
 }
 
 async function logout() {
@@ -422,7 +466,15 @@ async function startChat() {
 }
 
 async function newSession() {
-  const data = await api.createSession();
+  showView('chat');
+  $('#chatBody').innerHTML = '';
+  let data;
+  try {
+    data = await api.createSession();
+  } catch (e) {
+    toast(e.message || '新建对话失败');
+    return;
+  }
   state.sessionId = data.sessionId;
   state.status = 'collecting';
   state.messages = [{ role: 'assistant', content: data.greeting }];
@@ -526,7 +578,12 @@ async function sendMessage(content) {
 // ---------- 生成报告 ----------
 $('#btnReport').addEventListener('click', async () => {
   if (!state.sessionId || state.busy) return;
-  if (!confirm('生成后本次诊断将不能再补充信息。确定现在生成报告吗？')) return;
+  const okReport = await confirmDialog({
+    title: '生成报告',
+    message: '生成后本次诊断将不能再补充信息，确定现在生成报告吗？',
+    confirmText: '生成报告',
+  });
+  if (!okReport) return;
   setBusy(true, '正在生成报告…');
   const tip = addBubble('assistant', '<span class="typing">正在生成诊断报告…</span>');
   try {
@@ -571,6 +628,169 @@ function openReport() {
     '<div class="report-tip">报告生成 24 小时后自动删除，请及时下载保存。<br/>本建议基于经典管理学理论，仅供参考，不构成管理决策唯一依据。</div>';
   showView('report');
 }
+
+// ============================================================
+// 我的对话（列表 / 新建 / 续聊 / 改名 / 删除）
+// ============================================================
+function relTime(ts) {
+  const d = new Date(ts);
+  const now = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  const hm = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  if (sameDay(d, now)) return `今天 ${hm}`;
+  const y = new Date(now.getTime() - 86400000);
+  if (sameDay(d, y)) return `昨天 ${hm}`;
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${hm}`;
+}
+
+function convItemHtml(s) {
+  const statusLabel = s.status === 'reported' ? '已出报告' : '诊断中';
+  const statusCls = s.status === 'reported' ? 'tag-done' : 'tag-doing';
+  return `<div class="conv-item" data-id="${escapeHtml(s.id)}">
+    <div class="conv-main">
+      <div class="conv-title">${escapeHtml(s.title)}</div>
+      <div class="conv-meta">
+        <span class="tag ${statusCls}">${statusLabel}</span>
+        <span class="conv-time">${relTime(s.lastActiveAt)}</span>
+        <span class="conv-count">${s.messageCount} 条</span>
+      </div>
+    </div>
+    <div class="conv-ops">
+      <button class="icon-btn" data-act="rename">改名</button>
+      <button class="icon-btn danger" data-act="delete">删除</button>
+    </div>
+  </div>`;
+}
+
+async function loadConversations() {
+  const box = $('#convList');
+  if (!box) return;
+  state.editingId = null; // 重渲染前清掉残留编辑态，避免离开/返回后改名被 guard 卡死
+  try {
+    const { sessions } = await api.listSessions();
+    if (!sessions || !sessions.length) {
+      box.innerHTML = '<p class="muted">还没有对话。点右上角「新建对话」开始第一次诊断。</p>';
+      return;
+    }
+    box.innerHTML = sessions.map((s) => convItemHtml(s)).join('');
+    box.querySelectorAll('.conv-item').forEach((el) => {
+      const id = el.dataset.id;
+      el.querySelector('.conv-main').addEventListener('click', () => {
+        if (state.editingId) return;
+        openConversation(id);
+      });
+      const renameBtn = el.querySelector('[data-act="rename"]');
+      const delBtn = el.querySelector('[data-act="delete"]');
+      if (renameBtn) renameBtn.addEventListener('click', (e) => { e.stopPropagation(); renameConversation(id); });
+      if (delBtn) delBtn.addEventListener('click', (e) => { e.stopPropagation(); deleteConversation(id); });
+    });
+  } catch (e) {
+    box.innerHTML = `<p class="muted">加载失败：${escapeHtml(e.message)}</p>`;
+  }
+}
+
+async function openConversation(id) {
+  try {
+    await loadSession(id);
+    showView('chat');
+  } catch (e) {
+    toast(e.message || '打开失败');
+  }
+}
+
+async function renameConversation(id) {
+  if (state.editingId) return;
+  const item = document.querySelector(`.conv-item[data-id="${CSS.escape(id)}"]`);
+  if (!item) return;
+  const main = item.querySelector('.conv-main');
+  const ops = item.querySelector('.conv-ops');
+  const titleEl = item.querySelector('.conv-title');
+  if (!main || !ops || !titleEl) return;
+  const oldTitle = titleEl.textContent || '';
+
+  state.editingId = id;
+  main.innerHTML =
+    `<input class="conv-rename-input" type="text" maxlength="30" value="${escapeHtml(oldTitle)}" placeholder="给这段对话起个名字"/>` +
+    '<div class="conv-edit-row"><span class="conv-edit-hint">回车保存 · Esc 取消</span></div>';
+  ops.innerHTML =
+    '<button class="icon-btn save" data-edit="save">保存</button>' +
+    '<button class="icon-btn cancel" data-edit="cancel">取消</button>';
+
+  const input = main.querySelector('.conv-rename-input');
+  input.focus();
+  input.select();
+
+  const finish = () => {
+    state.editingId = null;
+    loadConversations();
+  };
+  const commit = async () => {
+    const title = input.value.trim();
+    if (!title) {
+      toast('名称不能为空');
+      input.focus();
+      return;
+    }
+    const saveBtn = ops.querySelector('[data-edit="save"]');
+    saveBtn.disabled = true;
+    try {
+      await api.renameSession(id, title);
+      finish();
+    } catch (e) {
+      saveBtn.disabled = false;
+      toast(e.message || '改名失败');
+    }
+  };
+
+  input.addEventListener('click', (e) => e.stopPropagation());
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      commit();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      finish();
+    }
+  });
+  // 失焦后收起文本选区，呈现普通「未选中」状态（仍保留编辑态，可再次点入继续输入）
+  input.addEventListener('blur', () => {
+    try { input.setSelectionRange(input.value.length, input.value.length); } catch {}
+  });
+  ops.querySelector('[data-edit="save"]').addEventListener('click', (e) => {
+    e.stopPropagation();
+    commit();
+  });
+  ops.querySelector('[data-edit="cancel"]').addEventListener('click', (e) => {
+    e.stopPropagation();
+    finish();
+  });
+}
+
+async function deleteConversation(id) {
+  const ok = await confirmDialog({
+    title: '删除对话',
+    message: '确定删除这段对话？对话与报告将被永久删除，不可恢复。',
+    confirmText: '删除',
+    danger: true,
+  });
+  if (!ok) return;
+  try {
+    await api.deleteSession(id);
+    if (state.sessionId === id) {
+      state.sessionId = null;
+      state.messages = [];
+      $('#chatBody').innerHTML = '';
+    }
+    loadConversations();
+    toast('已删除');
+  } catch (e) {
+    toast(e.message || '删除失败');
+  }
+}
+
+$('#btnNewConv').addEventListener('click', newSession);
+$('#btnConvList').addEventListener('click', () => showView('conversations'));
 
 // ============================================================
 // 启动

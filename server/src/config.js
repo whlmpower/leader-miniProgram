@@ -54,6 +54,15 @@ export const config = {
     process.env.CSP ||
     "default-src 'self'; img-src 'self' data:; font-src 'self' https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src 'self' 'unsafe-inline'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'",
 
+  // 上下文窗口管理（自动识别上限 + 预算闸门 + 压缩）
+  // step-3.7-flash 等模型的真实上下文长度以官方模型卡片为准；此处给保守安全值，
+  // 宁可略小也不要超估——放大只会让压缩更激进，不会因低估而撞窗。
+  contextWindowTokens: Number(process.env.CONTEXT_WINDOW_TOKENS || 32768),
+  // 预算闸门：留 20% 给模型回复，避免逼近硬上限被 API 拒绝
+  contextBudgetRatio: Number(process.env.CONTEXT_BUDGET_RATIO || 0.8),
+  // 始终保留的最近轮数（user+assistant 各算一条，故 *2）
+  recentTurns: Number(process.env.RECENT_TURNS || 8),
+
   // 限流（v2）
   ratePhoneMax: Number(process.env.RATE_PHONE_MAX || 5),
   rateIpMax: Number(process.env.RATE_IP_MAX || 10),

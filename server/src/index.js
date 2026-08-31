@@ -6,6 +6,7 @@ import fs from 'node:fs';
 import { config, isMock, WRITE_OPTS } from './config.js';
 import { buildSystemPrompt, buildReportInstruction, buildGreeting, activePack } from './skillLoader.js';
 import { chat, mockReport } from './llm.js';
+import { buildContext } from './context.js';
 import { renderReportHtml } from './report.js';
 import { renderConversationHtml, buildConversationFileName } from './conversation.js';
 import {
@@ -16,6 +17,9 @@ import {
   setReport,
   setConversation,
   persist,
+  renameSession,
+  deleteSession,
+  listSessionsForPhone,
 } from './store.js';
 import {
   requireAuth,
@@ -316,6 +320,30 @@ app.get('/api/sessions/mine', requireAuth, (req, res) => {
   });
 });
 
+// 列出当前用户全部会话（倒序），供「我的对话」视图渲染
+app.get('/api/sessions', requireAuth, (req, res) => {
+  res.json({ sessions: listSessionsForPhone(req.user.phone) });
+});
+
+// 改名（更新会话 title，覆盖自动标题）
+app.put('/api/session/:id', requireAuth, (req, res) => {
+  const s = getSession(req.params.id);
+  if (!s) return res.status(404).json({ error: '会话不存在' });
+  if (!assertOwner(req, s, res)) return;
+  const ok = renameSession(s, req.body?.title || '');
+  if (!ok) return res.status(400).json({ error: '标题不能为空' });
+  res.json({ ok: true, title: s.title });
+});
+
+// 删除会话（同时清理对话整理 HTML）
+app.delete('/api/session/:id', requireAuth, (req, res) => {
+  const s = getSession(req.params.id);
+  if (!s) return res.status(404).json({ error: '会话不存在' });
+  if (!assertOwner(req, s, res)) return;
+  deleteSession(s);
+  res.json({ ok: true });
+});
+
 app.post('/api/session', requireAuth, async (req, res) => {
   try {
     // 行业包在创建会话时快照，中途改 .env 不会影响进行中的诊断
@@ -378,9 +406,10 @@ app.post('/api/session/:id/message', requireAuth, async (req, res) => {
     } else {
       const extraSystem =
         s.status === 'reported' && s.report
-          ? `以下是已生成的报告全文，用户可能就报告内容追问：\n${s.report.markdown}`
+          ? '用户已收到诊断报告，可能就报告内容追问。请基于报告结论作答，不要重复生成完整报告。'
           : '';
-      reply = await chat(sysPrompt, s.messages, { extraSystem });
+      const ctx = buildContext(s, { extraSystem });
+      reply = await chat(sysPrompt, ctx.history, { extraSystem: ctx.extraSystem });
     }
     addMessage(s, 'assistant', reply);
 
@@ -413,7 +442,9 @@ app.post('/api/session/:id/report', requireAuth, async (req, res) => {
       markdown = mockReport();
     } else {
       const instruction = buildReportInstruction();
-      markdown = await chat(sysPrompt, s.messages, { extraSystem: instruction, temperature: 0.6 });
+      // 报告生成需读取完整诊断对话，不压缩历史（preserveAll）
+      const ctx = buildContext(s, { extraSystem: instruction, preserveAll: true });
+      markdown = await chat(sysPrompt, ctx.history, { extraSystem: ctx.extraSystem, temperature: 0.6 });
     }
     const html = renderReportHtml(markdown, '全向领导力诊断报告');
     setReport(s, markdown, html); // 持久化报告正文 HTML，供刷新恢复后报告页直接渲染

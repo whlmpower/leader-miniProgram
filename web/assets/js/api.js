@@ -61,6 +61,10 @@ export const api = {
     request('/api/admin/password', { method: 'PUT', body: { oldPwd, newPwd } }),
 
   mySessions: () => request('/api/sessions/mine'),
+  listSessions: () => request('/api/sessions'),
+  renameSession: (id, title) =>
+    request(`/api/session/${encodeURIComponent(id)}`, { method: 'PUT', body: { title } }),
+  deleteSession: (id) => request(`/api/session/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   createSession: () => request('/api/session', { method: 'POST' }),
   getSession: (id) => request(`/api/session/${encodeURIComponent(id)}`),
   sendMessage: (id, content) =>

@@ -34,7 +34,7 @@
     </header>
 
     <div class="home-cta">
-      <button class="btn btn-primary btn-block" data-go="login">开始诊断</button>
+      <button class="btn btn-primary btn-block" data-go="conversations">开始诊断</button>
       <p class="cta-note">封闭分发 · 需账号登录</p>
     </div>
 
@@ -244,6 +244,7 @@
         <span class="chat-name">全向领导力顾问</span>
         <span class="chat-sub" id="chatStatus">诊断中</span>
       </div>
+      <button class="link-btn" id="btnConvList">对话列表</button>
       <button class="link-btn" id="btnLogoutChat">退出</button>
     </div>
 
@@ -263,6 +264,16 @@
         </div>
       </div>
     </div>
+  </section>
+
+  <!-- ============ 我的对话 ============ -->
+  <section class="view" data-view="conversations">
+    <div class="view-head">
+      <button class="back" data-go="home">← 返回</button>
+      <h2 class="view-title">我的对话</h2>
+      <button class="btn btn-primary btn-sm" id="btnNewConv">新建对话</button>
+    </div>
+    <div class="conv-list" id="convList"><p class="muted">加载中…</p></div>
   </section>
 
   <!-- ============ 报告 ============ -->
@@ -307,6 +318,18 @@
       <p>本服务为封闭分发，账号由管理员创建并线下发放。请勿转借账号。登录态有效期 24 小时。</p>
 
       <p class="modal-foot">如对本协议有疑问，请联系管理员。</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 通用确认弹层 ============ -->
+<div class="modal confirm-modal" id="confirmModal" hidden>
+  <div class="modal-mask" data-confirm-close></div>
+  <div class="modal-panel confirm-panel">
+    <div class="confirm-body" id="confirmMsg"></div>
+    <div class="confirm-actions">
+      <button class="btn btn-ghost" id="confirmCancel">取消</button>
+      <button class="btn btn-primary" id="confirmOk">确定</button>
     </div>
   </div>
 </div>
