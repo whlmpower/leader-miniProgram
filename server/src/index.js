@@ -38,8 +38,13 @@ import {
   listUsers,
   authenticate,
   changeAdminPassword,
+  getUser,
+  getUserByEmail,
+  setEmail,
 } from './users.js';
 import { check, record } from './ratelimit.js';
+import { sendVerificationCode } from './email.js';
+import { requestCode, verifyCode } from './emailcode.js';
 
 // ---------- 日志：同时落盘到 data/server.log，便于排查“卡住/无响应” ----------
 const LOG_PATH = path.join(config.dataDir, 'server.log');
@@ -126,8 +131,11 @@ function publicConfig() {
     retentionHours: config.reportTtlHours,
     mock: isMock(),
     pack: activePack(),
+    emailLogin: config.emailLoginEnabled,
   };
 }
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // 报告生成后，AI 在对话框内追加的追问（用户语义判断「需要/不用」）
 const CONVERSATION_FOLLOWUP =
@@ -238,7 +246,12 @@ app.post('/api/auth/login', (req, res) => {
 
 // 当前登录身份（供前端校验 token / 渲染角色）
 app.get('/api/me', requireAuth, (req, res) => {
-  res.json({ phone: req.user.phone, role: req.user.role });
+  const rec = getUser(req.user.phone);
+  res.json({
+    phone: req.user.phone,
+    role: req.user.role,
+    email: rec && rec.email ? rec.email : '',
+  });
 });
 
 // 退出登录：清除 httpOnly cookie
@@ -247,17 +260,91 @@ app.post('/api/auth/logout', (req, res) => {
   res.json({ ok: true });
 });
 
+// ---------- 邮箱验证码登录（绑定到手机号账号） ----------
+// 发送验证码：邮箱必须已绑定账号，否则提示先绑定
+app.post('/api/auth/email/send-code', (req, res) => {
+  const email = String((req.body && req.body.email) || '').trim().toLowerCase();
+  if (!EMAIL_RE.test(email)) {
+    return res.status(400).json({ error: '请输入正确的邮箱地址' });
+  }
+  if (!getUserByEmail(email)) {
+    return res.status(404).json({ error: '该邮箱未绑定账号，请先用手机号登录后在「我的对话」中绑定邮箱' });
+  }
+  try {
+    const code = requestCode(email);
+    // 发送失败不阻断流程：本地 mock 走日志；真实发送异常仅记录，验证码仍有效可重试
+    sendVerificationCode({ to: email, code }).catch((e) => console.error('[EMAIL] 发送失败:', e.message));
+  } catch (e) {
+    return res.status(429).json({ error: e.message });
+  }
+  res.json({ ok: true });
+});
+
+// 邮箱验证码登录：校验通过后解析到对应账号（phone 归属不变），签发 JWT
+app.post('/api/auth/email/login', (req, res) => {
+  const email = String((req.body && req.body.email) || '').trim().toLowerCase();
+  const code = String((req.body && req.body.code) || '').trim();
+  if (!EMAIL_RE.test(email)) {
+    return res.status(400).json({ error: '请输入正确的邮箱地址' });
+  }
+  if (!/^\d{6}$/.test(code)) {
+    return res.status(400).json({ error: '请输入 6 位验证码' });
+  }
+  try {
+    verifyCode(email, code);
+  } catch (e) {
+    return res.status(400).json({ error: e.message });
+  }
+  const u = getUserByEmail(email);
+  if (!u) return res.status(404).json({ error: '该邮箱未绑定账号' });
+  if (u.revoked) return res.status(403).json({ error: '账号已被停用' });
+  const token = signToken({ phone: u.phone, role: 'user' });
+  setAuthCookie(res, token);
+  res.json({ token, role: 'user' });
+});
+
+// ---------- 已登录用户绑定邮箱（验证邮箱归属） ----------
+app.post('/api/me/bind-email', requireAuth, (req, res) => {
+  const email = String(req.body?.email || '').trim().toLowerCase();
+  if (!EMAIL_RE.test(email)) return res.status(400).json({ error: '请输入正确的邮箱地址' });
+  if (getUserByEmail(email)) return res.status(409).json({ error: '该邮箱已被其他账号绑定' });
+  try {
+    const code = requestCode(email);
+    sendVerificationCode({ to: email, code }).catch((e) => console.error('[EMAIL] 发送失败:', e.message));
+  } catch (e) {
+    return res.status(429).json({ error: e.message });
+  }
+  res.json({ ok: true });
+});
+
+app.post('/api/me/confirm-bind-email', requireAuth, (req, res) => {
+  const email = String(req.body?.email || '').trim().toLowerCase();
+  const code = String(req.body?.code || '').trim();
+  try {
+    verifyCode(email, code);
+  } catch (e) {
+    return res.status(400).json({ error: e.message });
+  }
+  const r = setEmail(req.user.phone, email);
+  if (!r.ok) return res.status(400).json({ error: r.error });
+  res.json({ ok: true, email: r.email });
+});
+
 // ---------- 管理后台（需 role=admin） ----------
 const admin = express.Router();
 admin.use(requireAuth, requireAdmin);
 
 admin.post('/users', (req, res) => {
   const phone = (req.body?.phone || '').trim();
+  const email = (req.body?.email || '').trim().toLowerCase();
   if (!/^1\d{10}$/.test(phone)) {
     return res.status(400).json({ error: '请输入正确的 11 位手机号' });
   }
+  if (email && !EMAIL_RE.test(email)) {
+    return res.status(400).json({ error: '邮箱格式不正确' });
+  }
   try {
-    const u = createUser(phone);
+    const u = createUser(phone, email);
     res.json(u);
   } catch (e) {
     console.error(e);

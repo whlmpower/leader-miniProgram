@@ -53,8 +53,18 @@ export const api = {
   logout: () => request('/api/auth/logout', { method: 'POST' }),
   me: () => request('/api/me'),
 
+  // 邮箱验证码登录
+  sendEmailCode: (email) => request('/api/auth/email/send-code', { method: 'POST', body: { email } }),
+  emailLogin: (email, code) =>
+    request('/api/auth/email/login', { method: 'POST', body: { email, code } }),
+  // 已登录用户绑定邮箱（先发码验证邮箱归属）
+  bindEmail: (email) => request('/api/me/bind-email', { method: 'POST', body: { email } }),
+  confirmBindEmail: (email, code) =>
+    request('/api/me/confirm-bind-email', { method: 'POST', body: { email, code } }),
+
   listUsers: () => request('/api/admin/users'),
-  createUser: (phone) => request('/api/admin/users', { method: 'POST', body: { phone } }),
+  createUser: (phone, email) =>
+    request('/api/admin/users', { method: 'POST', body: email ? { phone, email } : { phone } }),
   resetUser: (phone) => request(`/api/admin/users/${encodeURIComponent(phone)}/reset`, { method: 'POST' }),
   revokeUser: (phone) => request(`/api/admin/users/${encodeURIComponent(phone)}/revoke`, { method: 'POST' }),
   changeAdminPwd: (oldPwd, newPwd) =>

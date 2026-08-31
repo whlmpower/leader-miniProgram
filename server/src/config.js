@@ -69,6 +69,23 @@ export const config = {
   rateIpMax: Number(process.env.RATE_IP_MAX || 10),
   rateWindowHours: Number(process.env.RATE_WINDOW_HOURS || 24),
 
+  // 邮箱验证码登录（阿里云 DirectMail 邮件推送）
+  // 邮箱作为「绑定到手机号账号」的备用登录方式：验证码解析到已绑定该邮箱的账号。
+  // 无凭证或 EMAIL_MOCK=true 时走日志回显兜底（验证码打印到服务端日志），便于本地联调；
+  // 填入 EMAIL_ACCESS_KEY_ID/SECRET 并将 EMAIL_MOCK 设为 false 即切真实发送。
+  emailLoginEnabled: process.env.EMAIL_LOGIN_ENABLED !== 'false',
+  emailMock: process.env.EMAIL_MOCK === 'true' || !process.env.EMAIL_ACCESS_KEY_ID,
+  emailAccessKeyId: process.env.EMAIL_ACCESS_KEY_ID || '',
+  emailAccessKeySecret: process.env.EMAIL_ACCESS_KEY_SECRET || '',
+  emailFromAddress: process.env.EMAIL_FROM_ADDRESS || '',
+  emailFromAlias: process.env.EMAIL_FROM_ALIAS || '全向领导力顾问',
+  emailRegionId: process.env.EMAIL_REGION_ID || 'cn-hangzhou',
+  emailEndpoint: process.env.EMAIL_ENDPOINT || 'dm.aliyuncs.com',
+  emailCodeTtlMinutes: Number(process.env.EMAIL_CODE_TTL_MINUTES || 10),
+  emailSendCooldownSeconds: Number(process.env.EMAIL_SEND_COOLDOWN_SECONDS || 60),
+  emailMaxSendsPerHour: Number(process.env.EMAIL_MAX_SENDS_PER_HOUR || 5),
+  emailMaxVerifyAttempts: Number(process.env.EMAIL_MAX_VERIFY_ATTEMPTS || 5),
+
   // 文件路径
   usersFile: path.join(ROOT, 'data', 'users.json'),
   ratelimitFile: path.join(ROOT, 'data', 'ratelimit.json'),

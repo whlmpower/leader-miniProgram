@@ -70,13 +70,20 @@ export function getUser(phone) {
   return data.users.find((u) => u.phone === phone);
 }
 
-export function createUser(phone) {
+export function getUserByEmail(email) {
+  if (!email) return null;
+  const data = load();
+  return data.users.find((u) => u.email && u.email.toLowerCase() === String(email).toLowerCase());
+}
+
+export function createUser(phone, email) {
   const data = load();
   const password = generatePassword();
   const { salt, hash } = hashPassword(password);
   const now = Date.now();
   const rec = {
     phone,
+    email: email ? String(email).trim().toLowerCase() : '',
     pwdSalt: salt,
     pwdHash: hash,
     createdAt: now,
@@ -88,10 +95,10 @@ export function createUser(phone) {
   if (idx >= 0) data.users[idx] = rec;
   else data.users.push(rec);
   save(data);
-  return { phone, password, expiresAt: rec.expiresAt, createdAt: now, status: 'unused' };
+  return { phone, email: rec.email, password, expiresAt: rec.expiresAt, createdAt: now, status: 'unused' };
 }
 
-export function resetPassword(phone) {
+export function resetPassword(phone, email) {
   const data = load();
   const idx = data.users.findIndex((u) => u.phone === phone);
   if (idx < 0) return null;
@@ -100,6 +107,7 @@ export function resetPassword(phone) {
   const now = Date.now();
   data.users[idx] = {
     ...data.users[idx],
+    email: email !== undefined ? String(email || '').trim().toLowerCase() : data.users[idx].email,
     pwdSalt: salt,
     pwdHash: hash,
     createdAt: now,
@@ -109,7 +117,21 @@ export function resetPassword(phone) {
   };
   save(data);
   const rec = data.users[idx];
-  return { phone, password, expiresAt: rec.expiresAt, createdAt: now, status: 'unused' };
+  return { phone, email: rec.email, password, expiresAt: rec.expiresAt, createdAt: now, status: 'unused' };
+}
+
+// 绑定/更新账号邮箱：保证邮箱在账号间唯一（同一邮箱不可绑定两个账号）
+export function setEmail(phone, email) {
+  const e = String(email || '').trim().toLowerCase();
+  const data = load();
+  const idx = data.users.findIndex((u) => u.phone === phone);
+  if (idx < 0) return { ok: false, error: '账号不存在' };
+  if (e && data.users.some((u, i) => i !== idx && u.email && u.email.toLowerCase() === e)) {
+    return { ok: false, error: '该邮箱已被其他账号绑定' };
+  }
+  data.users[idx] = { ...data.users[idx], email: e };
+  save(data);
+  return { ok: true, email: e };
 }
 
 export function revokeUser(phone) {

@@ -190,11 +190,170 @@ $('#captchaBox').addEventListener('click', refreshCaptcha);
 $('#lgAgree').addEventListener('change', (e) => {
   $('#btnLogin').disabled = !e.target.checked;
 });
+$('#lgAgree2').addEventListener('change', (e) => {
+  $('#btnEmailLogin').disabled = !e.target.checked;
+});
+
+// 登录方式切换：手机号 / 邮箱验证码
+$$('#loginTabs .tab').forEach((tab) => {
+  tab.addEventListener('click', () => {
+    const mode = tab.dataset.tab;
+    $$('#loginTabs .tab').forEach((t) => t.classList.toggle('is-active', t === tab));
+    $('#phoneForm').hidden = mode !== 'phone';
+    $('#emailForm').hidden = mode !== 'email';
+  });
+});
 
 $('#btnLogin').addEventListener('click', login);
 $('#lgPwd').addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && !$('#btnLogin').disabled) login();
 });
+
+// ---------- 邮箱验证码登录 ----------
+let emailCodeTimer = null;
+async function sendEmailCode() {
+  const email = $('#lgEmail').value.trim();
+  const err = $('#lgEmailErr');
+  const btn = $('#btnSendEmailCode');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    err.textContent = '请输入正确的邮箱地址';
+    return;
+  }
+  btn.disabled = true;
+  try {
+    await api.sendEmailCode(email);
+    err.textContent = '';
+    toast('验证码已发送（请查收邮箱）');
+    let left = 60;
+    btn.textContent = `${left}s 后重发`;
+    emailCodeTimer = setInterval(() => {
+      left -= 1;
+      if (left <= 0) {
+        clearInterval(emailCodeTimer);
+        btn.textContent = '获取验证码';
+        btn.disabled = false;
+      } else {
+        btn.textContent = `${left}s 后重发`;
+      }
+    }, 1000);
+  } catch (e) {
+    err.textContent = e.message || '发送失败';
+    btn.disabled = false;
+  }
+}
+$('#btnSendEmailCode').addEventListener('click', sendEmailCode);
+
+async function emailLogin() {
+  const email = $('#lgEmail').value.trim();
+  const code = $('#lgEmailCode').value.trim();
+  const err = $('#lgEmailErr');
+  err.textContent = '';
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    err.textContent = '请输入正确的邮箱地址';
+    return;
+  }
+  if (!/^\d{6}$/.test(code)) {
+    err.textContent = '请输入 6 位验证码';
+    return;
+  }
+  const btn = $('#btnEmailLogin');
+  btn.disabled = true;
+  btn.textContent = '登录中…';
+  try {
+    const data = await api.emailLogin(email, code);
+    setToken(data.token);
+    state.role = data.role;
+    state.phone = email; // 邮箱登录，phone 取邮箱用于界面展示（会话归属仍为账号手机号）
+    $('#lgEmailErr').textContent = '';
+    $('#lgEmailCode').value = '';
+    enterAfterLogin();
+  } catch (e) {
+    err.textContent = e.message || '登录失败';
+  } finally {
+    btn.disabled = !$('#lgAgree2').checked;
+    btn.textContent = '登 录';
+  }
+}
+$('#btnEmailLogin').addEventListener('click', emailLogin);
+$('#lgEmailCode').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !$('#btnEmailLogin').disabled) emailLogin();
+});
+
+// ---------- 绑定邮箱（已登录） ----------
+let bindCodeTimer = null;
+$('#btnSendBindCode').addEventListener('click', async () => {
+  const email = $('#bindEmail').value.trim();
+  const err = $('#bindErr');
+  const btn = $('#btnSendBindCode');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    err.textContent = '请输入正确的邮箱地址';
+    return;
+  }
+  btn.disabled = true;
+  try {
+    await api.bindEmail(email);
+    err.textContent = '';
+    toast('验证码已发送到该邮箱');
+    let left = 60;
+    btn.textContent = `${left}s 后重发`;
+    bindCodeTimer = setInterval(() => {
+      left -= 1;
+      if (left <= 0) {
+        clearInterval(bindCodeTimer);
+        btn.textContent = '获取验证码';
+        btn.disabled = false;
+      } else {
+        btn.textContent = `${left}s 后重发`;
+      }
+    }, 1000);
+  } catch (e) {
+    err.textContent = e.message || '发送失败';
+    btn.disabled = false;
+  }
+});
+
+$('#btnConfirmBind').addEventListener('click', async () => {
+  const email = $('#bindEmail').value.trim();
+  const code = $('#bindCode').value.trim();
+  const err = $('#bindErr');
+  err.textContent = '';
+  if (!/^\d{6}$/.test(code)) {
+    err.textContent = '请输入 6 位验证码';
+    return;
+  }
+  try {
+    const r = await api.confirmBindEmail(email, code);
+    toast('邮箱绑定成功');
+    $('#bindEmail').value = '';
+    $('#bindCode').value = '';
+    $('#bindEmailPanel').hidden = true;
+    $('#bindNote').textContent = `已绑定：${r.email}`;
+  } catch (e) {
+    err.textContent = e.message || '绑定失败';
+  }
+});
+
+// 展开/收起绑定邮箱面板
+$('#btnShowBind').addEventListener('click', () => {
+  const panel = $('#bindEmailPanel');
+  panel.hidden = !panel.hidden;
+});
+
+// 进入「我的对话」时刷新邮箱绑定状态提示
+async function refreshBindStatus() {
+  try {
+    const me = await api.me();
+    if (me.email) {
+      $('#bindNote').textContent = `已绑定：${me.email}（如需更换，重新获取验证码即可覆盖）`;
+      $('#btnShowBind').textContent = '✎ 已绑定邮箱（点击更换）';
+    } else {
+      $('#bindNote').textContent = '';
+      $('#btnShowBind').textContent = '+ 绑定邮箱（用于邮箱验证码登录）';
+    }
+  } catch {
+    /* 忽略：不影响会话列表 */
+  }
+}
 
 async function login() {
   const phone = $('#lgPhone').value.trim();
@@ -326,16 +485,22 @@ function showPassword(pwd) {
 
 $('#btnCreate').addEventListener('click', async () => {
   const phone = $('#newPhone').value.trim();
+  const email = $('#newEmail').value.trim();
   if (!/^1\d{10}$/.test(phone)) {
     toast('请输入正确的 11 位手机号');
+    return;
+  }
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    toast('邮箱格式不正确');
     return;
   }
   const btn = $('#btnCreate');
   btn.disabled = true;
   try {
-    const r = await api.createUser(phone);
+    const r = await api.createUser(phone, email);
     showPassword(r.password);
     $('#newPhone').value = '';
+    $('#newEmail').value = '';
     loadUsers();
   } catch (e) {
     toast(e.message || '生成失败');
@@ -625,7 +790,7 @@ function openReport() {
   const body = $('#reportBody');
   body.innerHTML =
     `<div class="md">${state.reportHtml}</div>` +
-    '<div class="report-tip">报告生成 24 小时后自动删除，请及时下载保存。<br/>本建议基于经典管理学理论，仅供参考，不构成管理决策唯一依据。</div>';
+    '<div class="report-tip">报告生成 7 天后自动删除，请及时下载保存。<br/>本建议基于经典管理学理论，仅供参考，不构成管理决策唯一依据。</div>';
   showView('report');
 }
 
@@ -667,6 +832,7 @@ async function loadConversations() {
   const box = $('#convList');
   if (!box) return;
   state.editingId = null; // 重渲染前清掉残留编辑态，避免离开/返回后改名被 guard 卡死
+  refreshBindStatus(); // 刷新邮箱绑定状态提示
   try {
     const { sessions } = await api.listSessions();
     if (!sessions || !sessions.length) {
