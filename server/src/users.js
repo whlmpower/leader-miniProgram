@@ -42,6 +42,46 @@ function generatePassword() {
   return arr.join('');
 }
 
+// ---------- 自注册账号（邮箱注册通道） ----------
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// 自设密码强度：≥8 位，且同时含字母、数字、符号
+const SELF_PWD_RE = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[^a-zA-Z0-9]).{8,}$/;
+
+export function validateSelfPassword(pwd) {
+  if (typeof pwd !== 'string' || pwd.length < 8) return { ok: false, error: '密码至少 8 位' };
+  if (!SELF_PWD_RE.test(pwd)) return { ok: false, error: '密码需同时包含字母、数字和符号' };
+  return { ok: true };
+}
+
+// 自注册建号：邮箱（经邀请码+邮箱验证码验证后传入）+ 自设手机号与密码。
+// 校验格式与唯一性；密码永不过期（pwdSource='self'）。
+export function createSelfAccount(phone, email, password) {
+  const e = String(email || '').trim().toLowerCase();
+  if (!/^1\d{10}$/.test(phone)) return { ok: false, error: '请输入正确的 11 位手机号' };
+  if (!EMAIL_RE.test(e)) return { ok: false, error: '请输入正确的邮箱地址' };
+  const v = validateSelfPassword(password);
+  if (!v.ok) return v;
+  if (getUser(phone)) return { ok: false, error: '该手机号已注册，请直接登录' };
+  if (getUserByEmail(e)) return { ok: false, error: '该邮箱已注册' };
+  const { salt, hash } = hashPassword(password);
+  const now = Date.now();
+  const rec = {
+    phone,
+    email: e,
+    pwdSalt: salt,
+    pwdHash: hash,
+    pwdSource: 'self',
+    createdAt: now,
+    expiresAt: now + 36500 * 24 * 3600 * 1000, // 自设密码不过期（远未来兜底）
+    usedAt: null,
+    revoked: false,
+  };
+  const data = load();
+  data.users.push(rec);
+  save(data);
+  return { ok: true, phone, email: e };
+}
+
 // ---------- 初始化/同步管理员：每次启动都按 .env 最新值刷新 ----------
 // 设计：.env 是 admin 凭据的权威来源。只要配置了 ADMIN_PHONE/ADMIN_PASSWORD，
 // 每次启动都确保 users.json 里的 admin 与 .env 一致（首次创建 / 改密码 / 改手机号时更新）。
@@ -165,7 +205,8 @@ export function authenticate(phone, password) {
   const u = getUser(phone);
   if (!u) return { ok: false, reason: 'notfound' };
   if (u.revoked) return { ok: false, reason: 'revoked' };
-  if (Date.now() > u.expiresAt) return { ok: false, reason: 'expired' };
+  // 自设密码（pwdSource='self'）不过期；管理员下发的随机密码仍按 expiresAt 校验
+  if (u.pwdSource !== 'self' && Date.now() > u.expiresAt) return { ok: false, reason: 'expired' };
   if (!verifyPassword(password, u.pwdHash, u.pwdSalt)) return { ok: false, reason: 'badpw' };
   u.usedAt = Date.now();
   const data = load();
@@ -178,6 +219,7 @@ export function authenticate(phone, password) {
 // ---------- 列表（含状态） ----------
 export function statusOf(u, now = Date.now()) {
   if (u.revoked) return 'revoked';
+  if (u.pwdSource === 'self') return u.usedAt == null ? 'unused' : 'used';
   if (now > u.expiresAt) return 'expired';
   if (u.usedAt == null) return 'unused';
   return 'used';

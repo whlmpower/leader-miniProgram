@@ -147,8 +147,8 @@
         <h2 class="sec-title">怎么开始</h2>
       </div>
       <p class="sec-text">
-        本产品为<b>封闭分发</b>：账号由管理员统一创建、线下发放，不开放公开注册。
-        拿到账号后，用手机号 + 密码，或在「我的对话 → 绑定邮箱」后使用邮箱 + 验证码登录即可开始诊断。
+        本产品为<b>封闭分发</b>：账号由管理员统一创建、线下发放，或通过邀请码自助注册。
+        拿到账号后，用手机号 + 密码登录即可开始诊断；新用户可凭邀请码走邮箱注册流程自助建号。
       </p>
       <p class="muted">账号问题请联系管理员。</p>
     </section>
@@ -166,12 +166,6 @@
       <span class="head-space"></span>
     </div>
 
-    <div class="tabs" id="loginTabs">
-      <button class="tab is-active" data-tab="phone">手机号登录</button>
-      <button class="tab" data-tab="email">邮箱验证码登录</button>
-    </div>
-
-    <!-- 手机号登录 -->
     <form class="form" id="phoneForm">
       <label class="field">
         <span class="field-label">手机号</span>
@@ -180,7 +174,7 @@
 
       <label class="field">
         <span class="field-label">密码</span>
-        <input id="lgPwd" type="password" autocomplete="current-password" placeholder="管理员下发的密码"/>
+        <input id="lgPwd" type="password" autocomplete="current-password" placeholder="密码（管理员下发或注册时自设）"/>
       </label>
 
       <label class="field">
@@ -198,32 +192,78 @@
 
       <button class="btn btn-primary btn-block" id="btnLogin" disabled>登 录</button>
       <p class="form-err" id="lgErr"></p>
-      <p class="form-note">账号由管理员线下发放。连续输错会触发保护性锁定，请谨慎输入。</p>
+      <p class="form-note">账号由管理员下发，或通过邀请码自助注册。连续输错会触发保护性锁定。</p>
+      <button type="button" class="link-btn link-center" id="btnGoRegister">没有账号？去注册 →</button>
     </form>
+  </section>
 
-    <!-- 邮箱验证码登录 -->
-    <form class="form" id="emailForm" hidden>
+  <!-- ============ 邮箱注册（邀请码门控） ============ -->
+  <section class="view" data-view="register">
+    <div class="view-head">
+      <button class="back" data-go="login">← 返回</button>
+      <h2 class="view-title">邮箱注册</h2>
+      <span class="head-space"></span>
+    </div>
+
+    <form class="form" id="registerForm">
       <label class="field">
         <span class="field-label">邮箱</span>
-        <input id="lgEmail" type="email" autocomplete="username" placeholder="绑定过的邮箱，如 you@example.com"/>
-      </label>
-
-      <label class="field">
-        <span class="field-label">验证码</span>
-        <div class="captcha-row">
-          <input id="lgEmailCode" type="text" maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="6 位验证码"/>
-          <button type="button" class="btn btn-ghost btn-sm" id="btnSendEmailCode">获取验证码</button>
+        <div class="input-icon">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.6"/>
+            <path d="M4 7l8 6 8-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <input id="rgEmail" type="email" inputmode="email" autocomplete="username" placeholder="you@example.com"/>
         </div>
       </label>
 
-      <label class="agree">
-        <input type="checkbox" id="lgAgree2"/>
-        <span>我已阅读并同意<button type="button" class="link-btn" id="openPrivacy3">《隐私协议》</button></span>
+      <label class="field">
+        <span class="field-label">邀请码</span>
+        <input id="rgInvite" type="text" maxlength="32" autocomplete="off" placeholder="向管理员获取的邀请码（输完自动校验）"/>
       </label>
 
-      <button class="btn btn-primary btn-block" id="btnEmailLogin" disabled>登 录</button>
-      <p class="form-err" id="lgEmailErr"></p>
-      <p class="form-note">需先在「我的对话 → 绑定邮箱」中绑定邮箱，方可使用验证码登录。</p>
+      <label class="field">
+        <span class="field-label">邮箱验证码</span>
+        <div class="captcha-row">
+          <input id="rgEmailCode" type="text" maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="6 位验证码" disabled/>
+          <button type="button" class="btn btn-ghost btn-sm" id="btnSendRegCode" disabled>获取验证码</button>
+        </div>
+      </label>
+
+      <button class="btn btn-primary btn-block" id="btnRegister" disabled>注 册</button>
+      <p class="form-err" id="rgErr"></p>
+      <p class="form-note">验证邀请码后才能获取邮箱验证码。验证码将发送至上方邮箱。</p>
+      <button type="button" class="link-btn link-center" id="btnGoLoginFromReg">已有账号？去登录 →</button>
+    </form>
+  </section>
+
+  <!-- ============ 设置账号（自设手机号与密码） ============ -->
+  <section class="view" data-view="bind-account">
+    <div class="view-head">
+      <button class="back" data-go="register">← 返回</button>
+      <h2 class="view-title">设置账号</h2>
+      <span class="head-space"></span>
+    </div>
+
+    <form class="form" id="bindForm">
+      <label class="field">
+        <span class="field-label">登录手机号</span>
+        <input id="bdPhone" type="tel" inputmode="numeric" maxlength="11" autocomplete="username" placeholder="11 位手机号（作为登录账号）"/>
+      </label>
+
+      <label class="field">
+        <span class="field-label">设置密码</span>
+        <input id="bdPwd" type="password" autocomplete="new-password" placeholder="≥8 位，含字母、数字和符号"/>
+      </label>
+
+      <label class="field">
+        <span class="field-label">确认密码</span>
+        <input id="bdPwd2" type="password" autocomplete="new-password" placeholder="再次输入密码"/>
+      </label>
+
+      <button class="btn btn-primary btn-block" id="btnBind">完 成</button>
+      <p class="form-err" id="bdErr"></p>
+      <p class="form-note">密码将作为你后续登录的凭据，请妥善保存。</p>
     </form>
   </section>
 
@@ -306,22 +346,6 @@
       <button class="btn btn-primary btn-sm" id="btnNewConv">新建对话</button>
     </div>
 
-    <button class="link-btn conv-extra" id="btnShowBind">+ 绑定邮箱（用于邮箱验证码登录）</button>
-
-    <div class="panel bind-email-panel" id="bindEmailPanel" hidden>
-      <h3 class="panel-title">绑定邮箱（用于邮箱验证码登录）</h3>
-      <div class="row">
-        <input id="bindEmail" type="email" placeholder="输入要绑定的邮箱"/>
-        <button class="btn btn-ghost btn-sm" id="btnSendBindCode">获取验证码</button>
-      </div>
-      <div class="row">
-        <input id="bindCode" type="text" maxlength="6" inputmode="numeric" placeholder="6 位验证码"/>
-        <button class="btn btn-primary btn-sm" id="btnConfirmBind">绑定</button>
-      </div>
-      <p class="form-err" id="bindErr"></p>
-      <p class="form-note" id="bindNote"></p>
-    </div>
-
     <div class="conv-list" id="convList"><p class="muted">加载中…</p></div>
   </section>
 
@@ -347,7 +371,7 @@
     </div>
     <div class="modal-body">
       <h4>一、我们收集什么</h4>
-      <p>为完成诊断，我们需要：<b>手机号</b>（用于身份识别与账号发放）、<b>邮箱</b>（可选，用于邮箱验证码登录）与<b>你主动输入的对话内容</b>（诊断的唯一依据）。</p>
+      <p>为完成诊断，我们需要：<b>手机号</b>（用于身份识别与账号发放）、<b>邮箱</b>（可选，用于邀请码自助注册时的身份校验）与<b>你主动输入的对话内容</b>（诊断的唯一依据）。</p>
 
       <h4>二、我们不收集什么</h4>
       <p>不收集通讯录、位置、设备标识符、相册，也不接入任何第三方统计与广告 SDK。</p>

@@ -38,6 +38,10 @@ export const config = {
   adminPassword: process.env.ADMIN_PASSWORD || '',
   userPwdTtlHours: Number(process.env.USER_PWD_TTL_HOURS || 24),
 
+  // 邀请码：邮箱自注册门控（替代注册页图形验证码）。写在配置文件，可随时修改；
+  // 验证通过后才允许获取邮箱验证码。默认 !@0816，生产请改复杂值。
+  inviteCode: process.env.INVITE_CODE || '!@0816',
+
   // 安全加固（v2 安全审查后新增）
   cookieSecure: process.env.NODE_ENV === 'production' || process.env.COOKIE_SECURE === 'true',
   allowedOrigin: process.env.ALLOWED_ORIGIN || '', // 前后端不同源时填前端域名；同源留空
@@ -69,11 +73,11 @@ export const config = {
   rateIpMax: Number(process.env.RATE_IP_MAX || 10),
   rateWindowHours: Number(process.env.RATE_WINDOW_HOURS || 24),
 
-  // 邮箱验证码登录（阿里云 DirectMail 邮件推送）
-  // 邮箱作为「绑定到手机号账号」的备用登录方式：验证码解析到已绑定该邮箱的账号。
+  // 邮箱自注册（邀请码门控）
+  // 邮箱作为「邀请码门控的自注册通道」：凭邀请码 + 邮箱验证码完成注册，再自设手机号与密码。
   // 无凭证或 EMAIL_MOCK=true 时走日志回显兜底（验证码打印到服务端日志），便于本地联调；
   // 填入 EMAIL_ACCESS_KEY_ID/SECRET 并将 EMAIL_MOCK 设为 false 即切真实发送。
-  emailLoginEnabled: process.env.EMAIL_LOGIN_ENABLED !== 'false',
+  emailRegisterEnabled: process.env.EMAIL_REGISTER_ENABLED !== 'false',
   emailMock: process.env.EMAIL_MOCK === 'true' || !process.env.EMAIL_ACCESS_KEY_ID,
   emailAccessKeyId: process.env.EMAIL_ACCESS_KEY_ID || '',
   emailAccessKeySecret: process.env.EMAIL_ACCESS_KEY_SECRET || '',

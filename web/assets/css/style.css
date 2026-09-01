@@ -197,6 +197,15 @@
   padding: 0; text-decoration: underline; text-underline-offset: 3px;
 }
 
+/* 居中的文字链接（去注册 / 返回登录） */
+.link-center {
+  display: block; width: 100%; text-align: center;
+  margin-top: 24px; font-size: 15px; font-weight: 600; letter-spacing: 0.3px;
+  background: none; border: 0; color: var(--accent);
+  font-family: inherit; cursor: pointer; text-decoration: none;
+}
+.link-center:hover { text-decoration: underline; text-underline-offset: 3px; }
+
 /* ============================================================
    视图头
    ============================================================ */
@@ -231,10 +240,23 @@ input[type="tel"], input[type="password"], input[type="text"], textarea {
   width: 100%; background: var(--bg-2); color: var(--ink);
   border: 1px solid var(--line); border-radius: var(--r);
   padding: 12px 14px; font-size: 15px; font-family: inherit;
-  transition: border-color .18s;
+  transition: border-color .18s, box-shadow .18s;
   -webkit-appearance: none; appearance: none;
 }
-input:focus, textarea:focus { outline: none; border-color: var(--accent-line); }
+input:focus, textarea:focus {
+  outline: none; border-color: var(--accent-line);
+  box-shadow: 0 0 0 3px var(--accent-tint);
+}
+
+/* 带图标前缀的输入框（邮箱等） */
+.input-icon { position: relative; display: flex; align-items: center; }
+.input-icon .icon {
+  position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+  width: 18px; height: 18px; color: var(--ink-3);
+  pointer-events: none; flex: none; transition: color .18s;
+}
+.input-icon input { padding-left: 44px; }
+.input-icon:focus-within .icon { color: var(--accent); }
 input::placeholder, textarea::placeholder { color: var(--ink-3); }
 
 .captcha-row { display: flex; gap: 10px; }

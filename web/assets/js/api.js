@@ -53,14 +53,14 @@ export const api = {
   logout: () => request('/api/auth/logout', { method: 'POST' }),
   me: () => request('/api/me'),
 
-  // 邮箱验证码登录
-  sendEmailCode: (email) => request('/api/auth/email/send-code', { method: 'POST', body: { email } }),
-  emailLogin: (email, code) =>
-    request('/api/auth/email/login', { method: 'POST', body: { email, code } }),
-  // 已登录用户绑定邮箱（先发码验证邮箱归属）
-  bindEmail: (email) => request('/api/me/bind-email', { method: 'POST', body: { email } }),
-  confirmBindEmail: (email, code) =>
-    request('/api/me/confirm-bind-email', { method: 'POST', body: { email, code } }),
+  // 邮箱自注册（邀请码门控）
+  verifyInvite: (code) => request('/api/auth/register/verify-invite', { method: 'POST', body: { code } }),
+  registerSendCode: (email, inviteToken) =>
+    request('/api/auth/register/send-code', { method: 'POST', body: { email, inviteToken } }),
+  registerVerifyEmail: (email, code) =>
+    request('/api/auth/register/verify-email', { method: 'POST', body: { email, code } }),
+  registerComplete: (regToken, phone, password) =>
+    request('/api/auth/register/complete', { method: 'POST', body: { regToken, phone, password } }),
 
   listUsers: () => request('/api/admin/users'),
   createUser: (phone, email) =>

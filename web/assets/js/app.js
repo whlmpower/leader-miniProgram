@@ -66,6 +66,7 @@ const state = {
   busy: false,
   captchaId: '',
   editingId: null,
+  regToken: '',
 };
 
 // ---------- 通用 UI ----------
@@ -190,46 +191,66 @@ $('#captchaBox').addEventListener('click', refreshCaptcha);
 $('#lgAgree').addEventListener('change', (e) => {
   $('#btnLogin').disabled = !e.target.checked;
 });
-$('#lgAgree2').addEventListener('change', (e) => {
-  $('#btnEmailLogin').disabled = !e.target.checked;
-});
-
-// 登录方式切换：手机号 / 邮箱验证码
-$$('#loginTabs .tab').forEach((tab) => {
-  tab.addEventListener('click', () => {
-    const mode = tab.dataset.tab;
-    $$('#loginTabs .tab').forEach((t) => t.classList.toggle('is-active', t === tab));
-    $('#phoneForm').hidden = mode !== 'phone';
-    $('#emailForm').hidden = mode !== 'email';
-  });
-});
 
 $('#btnLogin').addEventListener('click', login);
 $('#lgPwd').addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && !$('#btnLogin').disabled) login();
 });
 
-// ---------- 邮箱验证码登录 ----------
-let emailCodeTimer = null;
-async function sendEmailCode() {
-  const email = $('#lgEmail').value.trim();
-  const err = $('#lgEmailErr');
-  const btn = $('#btnSendEmailCode');
+// ---------- 邮箱自注册（邀请码门控） ----------
+let regInviteToken = '';
+let regEmailCodeTimer = null;
+
+let regInviteBusy = false;
+async function verifyInvite() {
+  const code = $('#rgInvite').value.trim();
+  const err = $('#rgErr');
+  if (!code || regInviteBusy) return;
+  regInviteBusy = true;
+  err.textContent = '';
+  try {
+    const r = await api.verifyInvite(code);
+    regInviteToken = r.inviteToken;
+    $('#rgEmailCode').disabled = false;
+    $('#btnSendRegCode').disabled = false;
+    toast('邀请码验证成功，可获取邮箱验证码');
+  } catch (e) {
+    regInviteToken = '';
+    $('#rgEmailCode').disabled = true;
+    $('#btnSendRegCode').disabled = true;
+    err.textContent = e.message || '邀请码不正确';
+  } finally {
+    regInviteBusy = false;
+  }
+}
+// 邀请码：失焦后自动校验，无需单独按钮
+$('#rgInvite').addEventListener('blur', () => {
+  if ($('#rgInvite').value.trim()) verifyInvite();
+});
+$('#rgInvite').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); verifyInvite(); }
+});
+
+async function sendRegCode() {
+  const email = $('#rgEmail').value.trim();
+  const err = $('#rgErr');
+  const btn = $('#btnSendRegCode');
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     err.textContent = '请输入正确的邮箱地址';
     return;
   }
+  if (!regInviteToken) { err.textContent = '请先验证邀请码'; return; }
   btn.disabled = true;
   try {
-    await api.sendEmailCode(email);
+    await api.registerSendCode(email, regInviteToken);
     err.textContent = '';
     toast('验证码已发送（请查收邮箱）');
     let left = 60;
     btn.textContent = `${left}s 后重发`;
-    emailCodeTimer = setInterval(() => {
+    regEmailCodeTimer = setInterval(() => {
       left -= 1;
       if (left <= 0) {
-        clearInterval(emailCodeTimer);
+        clearInterval(regEmailCodeTimer);
         btn.textContent = '获取验证码';
         btn.disabled = false;
       } else {
@@ -241,12 +262,12 @@ async function sendEmailCode() {
     btn.disabled = false;
   }
 }
-$('#btnSendEmailCode').addEventListener('click', sendEmailCode);
+$('#btnSendRegCode').addEventListener('click', sendRegCode);
 
-async function emailLogin() {
-  const email = $('#lgEmail').value.trim();
-  const code = $('#lgEmailCode').value.trim();
-  const err = $('#lgEmailErr');
+async function registerStep1() {
+  const email = $('#rgEmail').value.trim();
+  const code = $('#rgEmailCode').value.trim();
+  const err = $('#rgErr');
   err.textContent = '';
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     err.textContent = '请输入正确的邮箱地址';
@@ -256,104 +277,76 @@ async function emailLogin() {
     err.textContent = '请输入 6 位验证码';
     return;
   }
-  const btn = $('#btnEmailLogin');
+  const btn = $('#btnRegister');
   btn.disabled = true;
-  btn.textContent = '登录中…';
   try {
-    const data = await api.emailLogin(email, code);
+    const r = await api.registerVerifyEmail(email, code);
+    state.regToken = r.regToken;
+    showView('bind-account');
+  } catch (e) {
+    err.textContent = e.message || '验证失败';
+  } finally {
+    btn.disabled = false;
+  }
+}
+$('#btnRegister').addEventListener('click', registerStep1);
+$('#rgEmailCode').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') registerStep1();
+});
+
+// ---------- 设置账号（自设手机号 + 密码） ----------
+const SELF_PWD_RE = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[^a-zA-Z0-9]).{8,}$/;
+async function bindAccount() {
+  const phone = $('#bdPhone').value.trim();
+  const pwd = $('#bdPwd').value;
+  const pwd2 = $('#bdPwd2').value;
+  const err = $('#bdErr');
+  err.textContent = '';
+  if (!/^1\d{10}$/.test(phone)) {
+    err.textContent = '请输入正确的 11 位手机号';
+    return;
+  }
+  if (!SELF_PWD_RE.test(pwd)) {
+    err.textContent = '密码至少 8 位，且需同时包含字母、数字和符号';
+    return;
+  }
+  if (pwd !== pwd2) {
+    err.textContent = '两次输入的密码不一致';
+    return;
+  }
+  const btn = $('#btnBind');
+  btn.disabled = true;
+  try {
+    const data = await api.registerComplete(state.regToken, phone, pwd);
     setToken(data.token);
     state.role = data.role;
-    state.phone = email; // 邮箱登录，phone 取邮箱用于界面展示（会话归属仍为账号手机号）
-    $('#lgEmailErr').textContent = '';
-    $('#lgEmailCode').value = '';
+    state.phone = phone;
+    toast('注册成功，已自动登录');
     enterAfterLogin();
   } catch (e) {
-    err.textContent = e.message || '登录失败';
+    err.textContent = e.message || '注册失败';
   } finally {
-    btn.disabled = !$('#lgAgree2').checked;
-    btn.textContent = '登 录';
-  }
-}
-$('#btnEmailLogin').addEventListener('click', emailLogin);
-$('#lgEmailCode').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && !$('#btnEmailLogin').disabled) emailLogin();
-});
-
-// ---------- 绑定邮箱（已登录） ----------
-let bindCodeTimer = null;
-$('#btnSendBindCode').addEventListener('click', async () => {
-  const email = $('#bindEmail').value.trim();
-  const err = $('#bindErr');
-  const btn = $('#btnSendBindCode');
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    err.textContent = '请输入正确的邮箱地址';
-    return;
-  }
-  btn.disabled = true;
-  try {
-    await api.bindEmail(email);
-    err.textContent = '';
-    toast('验证码已发送到该邮箱');
-    let left = 60;
-    btn.textContent = `${left}s 后重发`;
-    bindCodeTimer = setInterval(() => {
-      left -= 1;
-      if (left <= 0) {
-        clearInterval(bindCodeTimer);
-        btn.textContent = '获取验证码';
-        btn.disabled = false;
-      } else {
-        btn.textContent = `${left}s 后重发`;
-      }
-    }, 1000);
-  } catch (e) {
-    err.textContent = e.message || '发送失败';
     btn.disabled = false;
   }
-});
-
-$('#btnConfirmBind').addEventListener('click', async () => {
-  const email = $('#bindEmail').value.trim();
-  const code = $('#bindCode').value.trim();
-  const err = $('#bindErr');
-  err.textContent = '';
-  if (!/^\d{6}$/.test(code)) {
-    err.textContent = '请输入 6 位验证码';
-    return;
-  }
-  try {
-    const r = await api.confirmBindEmail(email, code);
-    toast('邮箱绑定成功');
-    $('#bindEmail').value = '';
-    $('#bindCode').value = '';
-    $('#bindEmailPanel').hidden = true;
-    $('#bindNote').textContent = `已绑定：${r.email}`;
-  } catch (e) {
-    err.textContent = e.message || '绑定失败';
-  }
-});
-
-// 展开/收起绑定邮箱面板
-$('#btnShowBind').addEventListener('click', () => {
-  const panel = $('#bindEmailPanel');
-  panel.hidden = !panel.hidden;
-});
-
-// 进入「我的对话」时刷新邮箱绑定状态提示
-async function refreshBindStatus() {
-  try {
-    const me = await api.me();
-    if (me.email) {
-      $('#bindNote').textContent = `已绑定：${me.email}（如需更换，重新获取验证码即可覆盖）`;
-      $('#btnShowBind').textContent = '✎ 已绑定邮箱（点击更换）';
-    } else {
-      $('#bindNote').textContent = '';
-      $('#btnShowBind').textContent = '+ 绑定邮箱（用于邮箱验证码登录）';
-    }
-  } catch {
-    /* 忽略：不影响会话列表 */
-  }
 }
+$('#btnBind').addEventListener('click', bindAccount);
+
+// 进入注册视图时清空并复位状态
+$('#btnGoRegister').addEventListener('click', () => {
+  regInviteToken = '';
+  state.regToken = '';
+  $('#rgErr').textContent = '';
+  $('#rgEmail').value = '';
+  $('#rgInvite').value = '';
+  $('#rgEmailCode').value = '';
+  $('#rgEmailCode').disabled = true;
+  $('#btnSendRegCode').disabled = true;
+  $('#btnRegister').disabled = false;
+  showView('register');
+});
+$('#btnGoLoginFromReg').addEventListener('click', () => showView('login'));
+
+// 绑定邮箱功能已移除：邮箱仅作为注册通道使用（见上方「邮箱自注册」逻辑）。
 
 async function login() {
   const phone = $('#lgPhone').value.trim();
@@ -832,7 +825,6 @@ async function loadConversations() {
   const box = $('#convList');
   if (!box) return;
   state.editingId = null; // 重渲染前清掉残留编辑态，避免离开/返回后改名被 guard 卡死
-  refreshBindStatus(); // 刷新邮箱绑定状态提示
   try {
     const { sessions } = await api.listSessions();
     if (!sessions || !sessions.length) {
