@@ -245,6 +245,7 @@ async function sendRegCode() {
     await api.registerSendCode(email, regInviteToken);
     err.textContent = '';
     toast('验证码已发送（请查收邮箱）');
+    $('#btnRegister').disabled = false;
     let left = 60;
     btn.textContent = `${left}s 后重发`;
     regEmailCodeTimer = setInterval(() => {
@@ -341,7 +342,7 @@ $('#btnGoRegister').addEventListener('click', () => {
   $('#rgEmailCode').value = '';
   $('#rgEmailCode').disabled = true;
   $('#btnSendRegCode').disabled = true;
-  $('#btnRegister').disabled = false;
+  $('#btnRegister').disabled = true;
   showView('register');
 });
 $('#btnGoLoginFromReg').addEventListener('click', () => showView('login'));
