@@ -67,7 +67,7 @@ export function sendVerificationCode({ to, code }) {
     HtmlBody: html,
     TextBody: text,
     ReplyToAddress: 'false',
-    MailAddress: config.emailFromAddress,
+    AccountName: config.emailFromAddress,
     ClickTrace: '0',
   };
 
