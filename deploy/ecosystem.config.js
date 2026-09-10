@@ -1,14 +1,18 @@
 // 全向领导力顾问 H5 · PM2 启动配置
-// 用法：cd /opt/leader/server && pm2 start deploy/ecosystem.config.js
+// 用法：cd <repo根目录> && pm2 start deploy/ecosystem.config.js
 // 更新后：pm2 restart leader-server
 // 开机自启：pm2 save && pm2 startup （按提示执行生成的命令）
+// 注意：路径用相对仓库根目录解析，clone 到任意目录都能用（不再硬编码 /opt/leader/server）
+
+const path = require('path');
+const serverDir = path.resolve(__dirname, '..', 'server');
 
 module.exports = {
   apps: [
     {
       name: 'leader-server',
-      script: '/opt/leader/server/src/index.js',
-      cwd: '/opt/leader/server',
+      script: path.join(serverDir, 'src/index.js'),
+      cwd: serverDir,
       instances: 1,            // 会话状态在内存 + 本地文件，暂用单实例；多实例需外部存储
       exec_mode: 'fork',
       autorestart: true,
